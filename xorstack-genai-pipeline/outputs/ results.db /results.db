@@ -1,1 +1,9 @@
+sqlite> SELECT filename, entity_type, entity_text, normalized FROM extractions;
+
+sample1.txt | PERSON | John Doe        | NULL
+sample1.txt | PERSON | Alice Johnson   | NULL
+sample1.txt | PERSON | Dr. Priya Singh | NULL
+sample1.txt | DATE   | 15/09/2025      | 2025-09-15
+sample1.txt | DATE   | Jan 1, 2023     | 2023-01-01
+sample1.txt | DATE   | 2024-12-31      | 2024-12-31
 
