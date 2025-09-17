@@ -1,1 +1,8 @@
+filename,entity_type,entity_text,normalized,start_char,end_char,processed_at
+sample1.txt,PERSON,John Doe,,,,
+sample1.txt,PERSON,Alice Johnson,,,,
+sample1.txt,PERSON,Dr. Priya Singh,,,,
+sample1.txt,DATE,15/09/2025,2025-09-15,27,37,2025-09-17T13:45:12.123456
+sample1.txt,DATE,Jan 1, 2023,2023-01-01,76,87,2025-09-17T13:45:12.123456
+sample1.txt,DATE,2024-12-31,2024-12-31,92,102,2025-09-17T13:45:12.123456
 
