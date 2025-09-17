@@ -1,0 +1,51 @@
+{
+  "name": "Upload Text File to FastAPI Extractor",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "1",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [200, 300]
+    },
+    {
+      "parameters": {
+        "filePath": "data/samples/sample1.txt"
+      },
+      "id": "2",
+      "name": "Read Binary File",
+      "type": "n8n-nodes-base.readBinaryFile",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8000/extract",
+        "method": "POST",
+        "sendBinaryData": true,
+        "binaryPropertyName": "data",
+        "options": {
+          "bodyContentType": "multipart-form-data"
+        }
+      },
+      "id": "3",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [700, 300]
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [{ "node": "Read Binary File", "type": "main", "index": 0 }]
+      ]
+    },
+    "Read Binary File": {
+      "main": [
+        [{ "node": "HTTP Request", "type": "main", "index": 0 }]
+      ]
+    }
+  }
+}
