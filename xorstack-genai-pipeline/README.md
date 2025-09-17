@@ -1,120 +1,168 @@
-# Xorstack Gen-AI Developer – Interview Assignment (Python + FastAPI)
 
-A small AI-powered pipeline that ingests plain-text documents, extracts structured information (**person names** and **dates**), and exposes it via a **FastAPI** service. Results are stored in **SQLite** and **CSV**.
+
+# LexiTrack – AI-Powered Text → JSON Pipeline
+
+[![Made with FastAPI](https://img.shields.io/badge/Made%20with-FastAPI-109989.svg?logo=fastapi)](https://fastapi.tiangolo.com/)
+[![spaCy](https://img.shields.io/badge/NLP-spaCy-09A3D5.svg?logo=python)](https://spacy.io/)
+[![n8n Workflow](https://img.shields.io/badge/Workflow-n8n-1abc9c.svg?logo=n8n)](https://n8n.io/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10+-3776AB.svg?logo=python)](https://www.python.org/)
+
+---
+
+## 📖 Overview
+
+**LexiTrack** is an AI-powered pipeline that ingests plain-text documents, extracts **entities** (currently `PERSON` and `DATE`), normalizes dates to ISO-8601, and outputs structured JSON.  
+
+The pipeline is built with **FastAPI + spaCy**, persists results to **SQLite/CSV**, and includes an **n8n workflow** for automation (file → API → DB/CSV).
+
+---
+
+## ✨ Features
+
+- 📂 **Document ingestion** (plain-text `.txt` files)  
+- 👤 **Named Entity Recognition (NER)** using **spaCy** for `PERSON`  
+- 📅 **Date extraction** using spaCy + regex, normalized with `dateparser`  
+- 🗂️ **Structured output** as JSON + persistence into SQLite (`outputs/results.db`) and CSV (`outputs/results.csv`)  
+- 🔄 **Automation workflow** with n8n (Manual/File Trigger → Read File → HTTP POST → DB/Sheets)  
+- ⚡ **REST API** via FastAPI with interactive Swagger docs  
 
 ---
 
 ## 🧰 Tech Stack
-- **Python 3.10+**
-- **FastAPI** (lightweight API)
-- **spaCy** (NER for `PERSON` + `DATE`)
-- **dateparser** (normalize date strings to ISO-8601)
-- **SQLite** + **CSV (pandas)** for storage
 
-> The pipeline works **offline** after installation. On first run, it will attempt to auto-download the spaCy English model if it's missing.
+- **Language:** Python 3.10+  
+- **Framework:** FastAPI  
+- **NLP:** spaCy + dateparser  
+- **Storage:** SQLite + CSV  
+- **Automation:** n8n workflow  
 
 ---
 
-## 📦 Setup
+## 📂 Project Structure
+
+LexiTrack-of-names-dates-entities/
+├── app/
+│ ├── main.py # FastAPI entrypoint
+│ ├── ner.py # Entity extraction logic
+│ ├── utils.py # Date regex + normalization
+│ ├── db.py # SQLite helper
+│ ├── models.py # Pydantic models
+│ └── process_folder.py # Batch processor
+├── data/
+│ └── samples/sample1.txt # Example input file
+├── outputs/
+│ ├── results.csv # Appended CSV output
+│ └── results.db # SQLite database
+├── n8n/
+│ └── workflow.example.json # Example workflow export
+├── requirements.txt
+├── README.md
+└── LICENSE
+
+yaml
+Copy code
+
+---
+
+## ⚙️ Setup & Installation
 
 ```bash
-# 1) Create a virtualenv (recommended)
-python -m venv .venv && source .venv/bin/activate   # (Linux/Mac)
-# or: .venv\Scripts\activate                      # (Windows PowerShell)
+# 1) Clone repo
+git clone https://github.com/rahulrn9/LexiTrack-of-names-dates-entities.git
+cd LexiTrack-of-names-dates-entities
 
-# 2) Install dependencies
+# 2) Create virtual environment
+python -m venv .venv
+source .venv/bin/activate        # Mac/Linux
+.\.venv\Scripts\activate         # Windows
+
+# 3) Install dependencies
 pip install -r requirements.txt
 
-# 3) Download spaCy English model if not auto-installed on first run
+# 4) Download spaCy model
 python -m spacy download en_core_web_sm
-```
+▶️ Run the API
+Start the FastAPI server:
 
----
-
-## ▶️ Run the API
-
-```bash
+bash
+Copy code
 uvicorn app.main:app --reload --port 8000
-```
+Check endpoints:
 
-Open docs at: **http://localhost:8000/docs**
+Health check → http://127.0.0.1:8000/health
 
-### Endpoints
-- `GET /health` – health check
-- `POST /extract` – accepts either:
-  - **multipart/form-data** with `file` (a `.txt` file), or
-  - **application/json** with `{"text": "your text here", "filename": "optional_name.txt"}`
+Swagger UI → http://127.0.0.1:8000/docs
 
-**Response Example**
-```json
+📤 Example Usage
+1. JSON Request
+bash
+Copy code
+curl -X POST "http://127.0.0.1:8000/extract" \
+  -H "Content-Type: application/json" \
+  -d '{"text": "John met Alice on 15/09/2025 in Bengaluru.", "filename":"demo.txt"}'
+Response:
+
+json
+Copy code
+{
+  "filename": "demo.txt",
+  "people": ["Alice", "John"],
+  "dates": ["2025-09-15"]
+}
+2. File Upload
+bash
+Copy code
+curl -X POST "http://127.0.0.1:8000/extract" \
+  -H "Content-Type: multipart/form-data" \
+  -F "file=@data/samples/sample1.txt"
+Response:
+
+json
+Copy code
 {
   "filename": "sample1.txt",
-  "people": ["John Doe", "Alice"],
-  "dates": ["2025-09-15", "2023-01-01"]
+  "people": ["John Doe", "Alice Johnson", "Priya Singh"],
+  "dates": ["2023-01-01", "2024-12-31", "2025-09-15"]
 }
-```
-
----
-
-## 🗄️ Storage
-
-- **SQLite** at `outputs/results.db`
-  - Table: `extractions`
-  - Columns: `id, filename, entity_type, entity_text, normalized, start_char, end_char, processed_at`
-- **CSV** at `outputs/results.csv` (append-only)
-
----
-
-## 📂 Batch Processing (folder)
-
-Process all `.txt` files in `data/samples`:
-
-```bash
+🔄 Batch Processing (all files in folder)
+bash
+Copy code
 python app/process_folder.py
-```
+🧩 n8n Workflow (Automation)
+Import n8n/workflow.example.json into n8n.
+Example flow:
 
----
+Manual Trigger
 
-## 🧪 Quick Test
+Read Binary File (sample1.txt)
 
-We include a sample text in `data/samples/sample1.txt`. Try:
+HTTP Request → POST to FastAPI /extract
 
-```bash
-curl -X POST "http://localhost:8000/extract"   -H "Content-Type: multipart/form-data"   -F "file=@data/samples/sample1.txt"
-```
+(Optional) Insert results into SQLite or Google Sheets
 
-Or JSON:
-```bash
-curl -X POST "http://localhost:8000/extract"   -H "Content-Type: application/json"   -d '{"text":"John met Alice on 15/09/2025 in Bengaluru. Meeting on Jan 1, 2023 too."}'
-```
+🗄️ Storage
+SQLite DB: outputs/results.db
 
----
+Table: extractions
 
-## 🧩 n8n (Optional Automation Idea)
+Columns: filename, entity_type, entity_text, normalized, start_char, end_char, processed_at
 
-If you want to show automation with **n8n**, create a simple flow:
-1. **Manual Trigger**
-2. **Read Binary File** (a `.txt` path)
-3. **HTTP Request** (POST to `http://host.docker.internal:8000/extract` or `http://fastapi:8000/extract` in Docker)
-4. **SQLite** (write results into `outputs/results.db`) or **Google Sheets**
+CSV: outputs/results.csv
 
-We also include a minimal example export you can tweak at `n8n/workflow.example.json`.
+Append-only, same structure
 
----
+🚀 Roadmap / Future Work
+Add LOCATION and ORG entity extraction
 
-## 📤 Deliverables (ready to email)
-- Full **code** under this repo.
-- **README** (this file).
-- **Example input**: `data/samples/sample1.txt`
-- **Outputs**: populated once you run the API or the batch script.
+Expose Dockerfile + docker-compose for one-command run
 
----
+Build Google Sheets automation flow in n8n
 
-## 📧 Emails
-Send the repo or a zip to:
-- revanna@xorstack.com
-- basanagouda@xorstack.com
+Add CLI script for quick text-to-JSON conversion
 
-Good luck!
-```
+📜 License
+This project is licensed under the MIT License – see LICENSE file for details.
 
+🤝 Contact
+Rahul Naduvinamani
